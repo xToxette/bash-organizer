@@ -48,7 +48,7 @@ while [ $# -gt 0 ]; do
                 overwrite=true
             elif [ $1 = "-d" ]; then
                 shift
-                if [ ! $# -eq 0 ]; then
+                if [ $# -eq 0 ]; then
                     echo "Expected folder path after -d"
                     exit
                 fi  
@@ -93,27 +93,25 @@ while [ $# -gt 0 ]; do
 done
 
 
-find $path -type f | sed -n 's/..*\.//p' | sort | uniq -c
 
 
 # Making sure to unzip all the zip files in the directory before
 # moving all the files in the folder to the output directory.
 for F in $(find $PWD -name "*.zip"); do
     if 7z l -slt $F | grep -q ZipCrypto; then
-			  file_Amount1=$(find $PWD -type f | wc -l)
-        for password in "${password_Array[@]}"
-        do
+		file_Amount1=$(find $PWD -type f | wc -l)
+        for password in "${password_Array[@]}"; do
             unzip -qq -P $password $F
-				    if [ $file_Amount1 -ne $(find $PWD -type f | wc -l)  ]; then
-					      break
-				    fi
-		    done
-			  if [ $file_Amount1 -ne $(find $PWD -type f | wc -l) ]; then
-			      rm -r $F
-			  fi
+			if [ $file_Amount1 -ne $(find $PWD -type f | wc -l)  ]; then
+				break
+			fi
+		done
+		if [ $file_Amount1 -ne $(find $PWD -type f | wc -l) ]; then
+			rm -r $F
+		fi
     else
-			  unzip -qq $F 
-			  rm -r $F
+		unzip -qq $F 
+	    rm -r $F
     fi       
 done
 
@@ -154,7 +152,7 @@ fi
 
 
 for F in $(find $PWD -not \( -path "$PWD/${relative_Directory}" -prune \) -type \f ); do
-		count=1
+	count=1
     if [ $F != "${PWD}/organize.sh" ] && [ $F != "${PWD}/log.txt" ]; then
         current_Directory="$PWD"
         mod_Date=$(date +%F -r $F)
@@ -167,41 +165,49 @@ for F in $(find $PWD -not \( -path "$PWD/${relative_Directory}" -prune \) -type 
             mv $F "${output_directory}/${mod_Date}"
         else
             if [ $overwrite = true ]; then
-					      mv $F "${output_directory}/${mod_Date}"
-				    else
-					      old_File=$F
-					      new_File=$F
-					      while true; do
-						        length_before=$(find "$output_directory" -type f | wc -l)
-						        mv -n $new_File "${output_directory}/${mod_Date}"
-						        if [ "$length_before" -lt $(find "$output_directory" -type f | wc -l) ]; then
-							          changed_Dir=true
-						    	      break
+				mv $F "${output_directory}/${mod_Date}"
+			else
+				old_File=$F
+				new_File=$F 
+				while true; do
+					length_before=$(find "$output_directory" -type f | wc -l)
+					mv -n $new_File "${output_directory}/${mod_Date}"
+					if [ "$length_before" -lt $(find "$output_directory" -type f | wc -l) ]; then
+						changed_Dir=true
+						break
                     fi
                     if [ $changed_Dir = false ]; then
 							
-							          file_Name=$(basename $F)
-							          file_Directory=$(dirname $F)
+						file_Name=$(basename $F)
+						file_Directory=$(dirname $F)
 
-							          ext="${file_Name##*.}"
-							          name="${file_Name%.*}"
+						ext="${file_Name##*.}"
+						name="${file_Name%.*}"
 							
-							          if [ ! -f "${file_Directory}/${name}${count}.${ext}" ]; then
-								            new_File="${file_Directory}/${name}${count}.${ext}"
-								            mv -n $old_File $new_File
+						if [ ! -f "${file_Directory}/${name}${count}.${ext}" ]; then
+							new_File="${file_Directory}/${name}${count}.${ext}"
+							mv -n $old_File $new_File
                             old_File=$new_File
-							          fi
+						fi
                     fi
-						    count=$((count+1))
-					      done
+				    count=$((count+1))
+				done
             fi
         fi
     fi
-		if [ $(find $PWD -not \( -path "$PWD/archive" -prune \) -type \f | wc -l) -eq 1 ]; then
+	if [ $(find $PWD -not \( -path "$PWD/archive" -prune \) -type \f | wc -l) -eq 1 ]; then
         break
     fi
 done
+
+
+find $output_directory -type f | sed -n 's/..*\.//p' | sort | uniq -c
+
+
 } 3>&1 1>&2 2>&3 | loggerInit
+
+
+
 
 if [ $something_wong = true ]; then
     echo "warning: Something went wrong while executing the script. Please check the log.txt for more information"

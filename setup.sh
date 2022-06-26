@@ -8,5 +8,5 @@ cp organize.sh FrankJones/organize.sh
 
 # Moving myself into the newly created directory so that
 # I can quickly run the script in there
-cd FrankJones
-exec bash
+#cd FrankJones
+#exec bash
